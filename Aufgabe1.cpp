@@ -103,12 +103,13 @@ namespace
 
             //Tür
             offset = 0;
+            double epsilon = distance * 1.01; //Tür leicht nach vorne versetzen, damit sich Flächen beim Zeichnen nicht überlagern
             for (int i = 0; i != numberHouses; i++) {
                 double doorStart = 0.25 * distance;
-                points.push_back(Point3({doorStart + 2 * distance * offset, 0.5 * distance, distance}));
-                points.push_back(Point3({doorStart + 2 * distance * offset, 0, distance}));
-                points.push_back(Point3({3 * doorStart + 2 * distance * offset, 0, distance}));
-                points.push_back(Point3({3 * doorStart + 2 * distance * offset, 0.5 * distance, distance}));
+                points.push_back(Point3({doorStart + 2 * distance * offset, 0.5 * distance, epsilon}));
+                points.push_back(Point3({doorStart + 2 * distance * offset, 0, epsilon}));
+                points.push_back(Point3({3 * doorStart + 2 * distance * offset, 0, epsilon}));
+                points.push_back(Point3({3 * doorStart + 2 * distance * offset, 0.5 * distance, epsilon}));
 
                 for (int i = 0; i < 4; i++) {
                     indices.push_back(points.size() - 4 + i); //Tür Punkte in richtiger Reihenfolge
