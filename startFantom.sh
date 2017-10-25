@@ -1,6 +1,4 @@
 #!/bin/bash
 
 cd ..
-cmake .
-make
-./fantom.sh -r
+cmake . && make && ./fantom.sh -r
