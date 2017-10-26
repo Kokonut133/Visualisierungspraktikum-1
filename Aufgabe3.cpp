@@ -2,7 +2,6 @@
 #include <fantom/register.hpp>
 #include <fantom/fields.hpp>
 #include <fantom/graphics.hpp>
-#include <math.h>
 
 using namespace fantom;
 
@@ -23,7 +22,6 @@ namespace
                 add< double >("Threshold", "Grenzwert", 0.0008);
                 add< double >("Radius", "Kugelradius", 0.15);
                 add< bool >("Scale", "Größe der Punkte anhand ihres Wertes skalieren", false);
-                add< bool >("new", "Zweite Implementierung", false);
             }
         };
 
@@ -53,43 +51,18 @@ namespace
             std::unique_ptr< TensorFieldDiscrete< Scalar >::DiscreteEvaluator > evaluator = field->makeDiscreteEvaluator();
             auto threshold = options.get< double >("Threshold");
 
-            if (options.get< bool >("new")) { //zweite impl, zeichnet am Ursprung
-                std::shared_ptr< const Grid< 3 > > grid = std::dynamic_pointer_cast< const Grid< 3 > >( field->domain() );
-                const ValueArray< Point3 >& points = grid->points();
+            std::shared_ptr< const Grid< 3 > > grid = std::dynamic_pointer_cast< const Grid< 3 > >( field->domain() );
+            const ValueArray< Point3 >& points = grid->points();
 
-                debugLog() << "Points: " << points.size() << std::endl;
-                debugLog() << "Values: " << evaluator->numValues() << std::endl;
-
-                auto size = points.size();
-                for (int i = 0; i < size; i++) {
-                    auto value = evaluator->value(i);
-                    if (value[0] >= threshold) {
-                        double diameter = value[0] / threshold;
-                        if (valuesToDraw.find(diameter) == valuesToDraw.end()) {
-                            valuesToDraw.insert({diameter, std::vector<Point3>()});
-                        }
-                        valuesToDraw[diameter].push_back(points[i]);
+            auto size = points.size();
+            for (size_t i = 0; i < size; i++) {
+                auto value = evaluator->value(i);
+                if (value[0] >= threshold) {
+                    double diameter = value[0] / threshold;
+                    if (valuesToDraw.find(diameter) == valuesToDraw.end()) {
+                        valuesToDraw.insert({diameter, std::vector<Point3>()});
                     }
-                }
-            }
-            else { //erste impl
-                auto numValues = evaluator->numValues(); //Anzahl der Punkte
-                long dim = cbrt(numValues); //Dimension der Punktverteilung, im Beispiel 31
-
-                for (unsigned int z = 0.0; z < dim; z++) {
-                    for (unsigned int x = 0.0; x < dim; x++) {
-                        for (unsigned int y = 0.0; y < dim; y++) {
-                            auto index = z * dim * dim + x * dim + y;
-                            auto value = evaluator->value(index);
-                            if (value[0] >= threshold) {
-                                double diameter = value[0] / threshold;
-                                if (valuesToDraw.find(diameter) == valuesToDraw.end()) {
-                                    valuesToDraw.insert({diameter, std::vector<Point3>()});
-                                }
-                                valuesToDraw[diameter].push_back(Point3(x, y, z));
-                            }
-                        }
-                    }
+                    valuesToDraw[diameter].push_back(points[i]);
                 }
             }
 
