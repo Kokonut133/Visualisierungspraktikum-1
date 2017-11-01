@@ -54,9 +54,25 @@ namespace
         ~RungeKutta() {}
 
         Tensor<T, N> nextStep(Tensor<T, N> startPoint, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) override {
-            //TODO implement Runge-Kutta
-            this->setHasNext(false);
-            return startPoint;
+            double stepWidth = 0.1;
+            Point3 q1 = getTensor(startPoint, evaluator);
+            Point3 q2 = getTensor(startPoint + stepWidth * 0.5 * q1, evaluator);
+            Point3 q3 = getTensor(startPoint + stepWidth * 0.5 * q2, evaluator);
+            Point3 q4 = getTensor(startPoint + q3, evaluator);
+            Point3 nextPoint = startPoint + stepWidth / 6 * (q1 + q2 + q3 + q4);
+            if (startPoint == nextPoint) this->setHasNext(false);
+            if (!this->hasNext()) return startPoint;
+            return nextPoint;
+        }
+
+    private:
+        Tensor<T, N> getTensor(Tensor<T, N> point, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) {
+            if (evaluator.reset(point)) {
+                return evaluator.value();
+            } else {
+                this->setHasNext(false);
+                return point;
+            }
         }
     };
 
