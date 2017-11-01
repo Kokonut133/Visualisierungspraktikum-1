@@ -20,25 +20,25 @@ namespace
     template<class T, size_t N>
     class Euler : Integrator<T, N>
     {
-        unsigned int stepWidth;
+        double stepWidth;
         bool doesHaveNext;
 
     public:
-        Euler(unsigned int initialStepWidth) : Integrator<T, N>() {
+        Euler(double initialStepWidth) : Integrator<T, N>() {
             stepWidth = initialStepWidth;
             reset();
         }
         ~Euler() {}
 
-        Tensor<T, N> nextStep(Tensor<T, N> xn, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) override {
-            if (evaluator.reset(xn)) {
-                auto vXn = evaluator.value(); //Wert an der Stelle xn
-                auto nextValue = xn + stepWidth * vXn; //Addition und Multiplikation auf Tensoren ist definiert
-                if (xn == nextValue) doesHaveNext = false;
-                return nextValue;
+        Tensor<T, N> nextStep(Tensor<T, N> startPoint, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) override {
+            if (evaluator.reset(startPoint)) {
+                auto changeRate = evaluator.value(); //Wert an der Stelle xn
+                auto nextPoint = startPoint + stepWidth * changeRate; //Addition und Multiplikation auf Tensoren ist definiert
+                if (startPoint == nextPoint) doesHaveNext = false;
+                return nextPoint;
             }
             doesHaveNext = false;
-            return xn;
+            return startPoint;
         }
 
         bool hasNext() override {
@@ -103,7 +103,7 @@ namespace
 //            std::shared_ptr< const Grid< 3 > > grid = std::dynamic_pointer_cast< const Grid< 3 > >( field->domain() );
 //            const ValueArray< Point3 >& points = grid->points();
 
-            auto euler = Euler<double, 3>(options.get< double >("Stepwidth"));
+            auto integrator = Euler<double, 3>(options.get< double >("Stepwidth"));
 
             std::vector<Point3> startPoints;
 
@@ -125,16 +125,16 @@ namespace
 
             for (size_t i = 0; i < startPoints.size(); i++) {
                 auto evaluator = field->makeEvaluator();
-                auto v = startPoints[i];
+                auto startPoint = startPoints[i];
                 std::vector<Point3> vertices;
 
-                while (euler.hasNext()) {
-                    Vector3 nv = euler.nextStep(v, *evaluator);
-                    vertices.push_back(v);
-                    vertices.push_back(nv);
-                    v = nv;
+                while (integrator.hasNext()) {
+                    Vector3 nextPoint = integrator.nextStep(startPoint, *evaluator);
+                    vertices.push_back(startPoint);
+                    vertices.push_back(nextPoint);
+                    startPoint = nextPoint;
                 }
-                euler.reset();
+                integrator.reset();
 
                 mGlyphs->add(Primitive::LINES).setVertices(vertices);
             }
