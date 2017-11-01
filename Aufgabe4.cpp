@@ -12,24 +12,41 @@ namespace
     {
     public:
         virtual ~Integrator() {}
-        virtual Tensor<T, N> nextStep(Tensor<T, N> xn, std::shared_ptr<const TensorFieldInterpolated<N, Tensor<T, N>>> field) = 0;
+        virtual Tensor<T, N> nextStep(Tensor<T, N> xn, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) = 0;
+        virtual bool hasNext() = 0;
+        virtual void reset() = 0;
     };
 
     template<class T, size_t N>
     class Euler : Integrator<T, N>
     {
         unsigned int stepWidth;
+        bool doesHaveNext;
 
     public:
         Euler(unsigned int initialStepWidth) : Integrator<T, N>() {
             stepWidth = initialStepWidth;
+            reset();
         }
         ~Euler() {}
 
-        Tensor<T, N> nextStep(Tensor<T, N> xn, std::shared_ptr<const TensorFieldInterpolated<N, Tensor<T, N>>> field) override {
-            field->domain();
-            auto vXn = Tensor<T, N>(1, 1, 1); //TODO get vXn from field http://www.iwr.uni-heidelberg.de/groups/CoVis/Data/vis1-7_Vektordaten1.pdf
-            return xn + stepWidth * vXn; //Addition und Multiplikation auf Tensoren ist definiert
+        Tensor<T, N> nextStep(Tensor<T, N> xn, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) override {
+            if (evaluator.reset(xn, 0)) {
+                auto vXn = evaluator.value(); //Wert an der Stelle xn
+                auto nextValue = xn + stepWidth * vXn; //Addition und Multiplikation auf Tensoren ist definiert
+                if (xn == nextValue) doesHaveNext = false;
+                return nextValue;
+            }
+            doesHaveNext = false;
+            return xn;
+        }
+
+        bool hasNext() {
+            return doesHaveNext;
+        }
+
+        void reset() {
+            doesHaveNext = true;
         }
     };
 
@@ -42,7 +59,8 @@ namespace
         {
             Options( Control& control ) : VisAlgorithm::Options( control )
             {
-                add< TensorFieldInterpolated < 3, Vector3 > >("Field", "Feld mit Input" ); ///home/visprak11/fantom/TestData/streamTest2.vtk
+                add< TensorFieldContinuous< 3, Vector3 > >("Field", "Feld mit Input" ); ///home/visprak11/fantom/TestData/streamTest2.vtk
+                add< double >("Stepwidth", "Schrittweite für das Euler-Verfahren", 1.0);
             }
         };
 
@@ -61,15 +79,26 @@ namespace
         void execute( const Algorithm::Options& options, const volatile bool& /* abortFlag */ ) override
         {
             mGlyphs = getGraphics("Glyphs").makePrimitive();
-            auto field = options.get< TensorFieldInterpolated < 3, Vector3 > >("Field");
+            auto field = options.get< TensorFieldContinuous< 3, Vector3 > >("Field");
 
             if (!field) return;
 
-            std::shared_ptr< const Grid< 3 > > grid = std::dynamic_pointer_cast< const Grid< 3 > >( field->domain() );
-            const ValueArray< Vector3 >& vectors = grid->points();
+            auto evaluator = field->makeEvaluator();
+            //std::shared_ptr< const Grid< 3 > > grid = std::dynamic_pointer_cast< const Grid< 3 > >( field->domain() );
+            //const ValueArray< Point3 >& points = grid->points();
 
-            auto euler = Euler<double, 3>(1);
-            debugLog() << vectors[1] << " " << euler.nextStep(vectors[1], field) << std::endl;
+            auto euler = Euler<double, 3>(options.get< double >("Stepwidth"));
+            Vector3 v = Point3(-4, 4, 4);
+
+            std::vector<Point3> vertices;
+            while (euler.hasNext()) {
+                Vector3 nv = euler.nextStep(v, *evaluator);
+                vertices.push_back(v);
+                vertices.push_back(nv);
+                v = nv;
+            }
+
+            mGlyphs->add(Primitive::LINES).setVertices(vertices);
         }
 
     };
