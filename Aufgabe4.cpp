@@ -13,20 +13,23 @@ namespace
     public:
         virtual ~Integrator() {}
         virtual Tensor<T, N> nextStep(Tensor<T, N> xn, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) = 0;
-        virtual bool hasNext() = 0;
-        virtual void reset() = 0;
+        void reset() {setHasNext(true);}
+        bool hasNext() {return dhn;}
+    protected:
+        void setHasNext(bool b) {dhn = b;}
+    private:
+        bool dhn;
     };
 
     template<class T, size_t N>
-    class Euler : Integrator<T, N>
+    class Euler : public Integrator<T, N>
     {
         double stepWidth;
-        bool doesHaveNext;
 
     public:
         Euler(double initialStepWidth) : Integrator<T, N>() {
             stepWidth = initialStepWidth;
-            reset();
+            this->reset();
         }
         ~Euler() {}
 
@@ -34,19 +37,26 @@ namespace
             if (evaluator.reset(startPoint)) {
                 auto changeRate = evaluator.value(); //Wert an der Stelle xn
                 auto nextPoint = startPoint + stepWidth * changeRate; //Addition und Multiplikation auf Tensoren ist definiert
-                if (startPoint == nextPoint) doesHaveNext = false;
+                if (startPoint == nextPoint) this->setHasNext(false);
                 return nextPoint;
             }
-            doesHaveNext = false;
+            this->setHasNext(false);
             return startPoint;
         }
+    };
 
-        bool hasNext() override {
-            return doesHaveNext;
+    template<class T, size_t N>
+    class RungeKutta : public Integrator<T, N> {
+    public:
+        RungeKutta(): Integrator<T, N>() {
+
         }
+        ~RungeKutta() {}
 
-        void reset() override {
-            doesHaveNext = true;
+        Tensor<T, N> nextStep(Tensor<T, N> startPoint, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) override {
+            //TODO implement Runge-Kutta
+            this->setHasNext(false);
+            return startPoint;
         }
     };
 
@@ -60,7 +70,8 @@ namespace
             Options( Control& control ) : VisAlgorithm::Options( control )
             {
                 add< TensorFieldContinuous< 3, Vector3 > >("Field", "Feld mit Input" ); ///home/visprak11/fantom/TestData/streamTest2.vtk
-                add< double >("Stepwidth", "Schrittweite fuer das Euler-Verfahren", 1.0);
+                add< InputChoices >("Method", "Integrationsverfahren", std::vector<std::string>({"Euler", "Runge-Kutta"}), "Euler");
+                add< double >("Stepwidth", "Schrittweite fuer das Euler-Verfahren", 1.0); //TODO disable for Runge-Kutta
 
                 addSeparator();
                 add< double >("Startline_start_x", "2D-Linie Startpunkt x", -1);
@@ -100,10 +111,20 @@ namespace
             auto field = options.get< TensorFieldContinuous< 3, Vector3 > >("Field");
 
             if (!field) return;
-//            std::shared_ptr< const Grid< 3 > > grid = std::dynamic_pointer_cast< const Grid< 3 > >( field->domain() );
-//            const ValueArray< Point3 >& points = grid->points();
 
-            auto integrator = Euler<double, 3>(options.get< double >("Stepwidth"));
+            Integrator<double, 3>* integrator;
+
+            std::string method = options.get< std::string >("Method");
+            if (method.compare("Euler") == 0) {
+                auto euler = Euler<double, 3>(options.get< double >("Stepwidth"));
+                integrator = new Euler<double, 3>(options.get< double >("Stepwidth"));
+            }
+            else if (method.compare("Runge-Kutta") == 0) {
+                auto rungeKutta = RungeKutta<double, 3>();
+                integrator = new RungeKutta<double, 3>();
+            }
+
+            debugLog() << typeid(integrator).name() << std::endl;
 
             std::vector<Point3> startPoints;
 
@@ -128,13 +149,13 @@ namespace
                 auto startPoint = startPoints[i];
                 std::vector<Point3> vertices;
 
-                while (integrator.hasNext()) {
-                    Vector3 nextPoint = integrator.nextStep(startPoint, *evaluator);
+                while (integrator->hasNext()) {
+                    Vector3 nextPoint = integrator->nextStep(startPoint, *evaluator);
                     vertices.push_back(startPoint);
                     vertices.push_back(nextPoint);
                     startPoint = nextPoint;
                 }
-                integrator.reset();
+                integrator->reset();
 
                 mGlyphs->add(Primitive::LINES).setVertices(vertices);
             }
