@@ -16,7 +16,12 @@ namespace
         void reset() {setHasNext(true);}
         bool hasNext() {return dhn;}
     protected:
+        Integrator(double stepWidth) {
+            this->stepWidth = stepWidth;
+            this->reset();
+        }
         void setHasNext(bool b) {dhn = b;}
+        double stepWidth;
     private:
         bool dhn;
     };
@@ -24,19 +29,14 @@ namespace
     template<class T, size_t N>
     class Euler : public Integrator<T, N>
     {
-        double stepWidth;
-
     public:
-        Euler(double initialStepWidth) : Integrator<T, N>() {
-            stepWidth = initialStepWidth;
-            this->reset();
-        }
+        Euler(double initialStepWidth) : Integrator<T, N>(initialStepWidth) {}
         ~Euler() {}
 
         Tensor<T, N> nextStep(Tensor<T, N> startPoint, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) override {
             if (evaluator.reset(startPoint)) {
                 auto changeRate = evaluator.value(); //Wert an der Stelle xn
-                auto nextPoint = startPoint + stepWidth * changeRate; //Addition und Multiplikation auf Tensoren ist definiert
+                auto nextPoint = startPoint + this->stepWidth * changeRate; //Addition und Multiplikation auf Tensoren ist definiert
                 if (startPoint == nextPoint) this->setHasNext(false);
                 return nextPoint;
             }
@@ -48,18 +48,15 @@ namespace
     template<class T, size_t N>
     class RungeKutta : public Integrator<T, N> {
     public:
-        RungeKutta(): Integrator<T, N>() {
-
-        }
+        RungeKutta(double initialStepWidth): Integrator<T, N>(initialStepWidth) {}
         ~RungeKutta() {}
 
         Tensor<T, N> nextStep(Tensor<T, N> startPoint, TensorFieldContinuous<3, Tensor<double, 3>>::Evaluator& evaluator) override {
-            double stepWidth = 0.1;
-            Point3 q1 = getTensor(startPoint, evaluator);
-            Point3 q2 = getTensor(startPoint + stepWidth * 0.5 * q1, evaluator);
-            Point3 q3 = getTensor(startPoint + stepWidth * 0.5 * q2, evaluator);
-            Point3 q4 = getTensor(startPoint + q3, evaluator);
-            Point3 nextPoint = startPoint + stepWidth / 6 * (q1 + q2 + q3 + q4);
+            Tensor<T, N> q1 = getTensor(startPoint, evaluator);
+            Tensor<T, N> q2 = getTensor(startPoint + this->stepWidth * 0.5 * q1, evaluator);
+            Tensor<T, N> q3 = getTensor(startPoint + this->stepWidth * 0.5 * q2, evaluator);
+            Tensor<T, N> q4 = getTensor(startPoint + q3, evaluator);
+            Tensor<T, N> nextPoint = startPoint + this->stepWidth / 6 * (q1 + q2 + q3 + q4);
             if (startPoint == nextPoint) this->setHasNext(false);
             if (!this->hasNext()) return startPoint;
             return nextPoint;
@@ -113,7 +110,7 @@ namespace
         {
             VisOutputs( fantom::VisOutputs::Control& control ) : VisAlgorithm::VisOutputs( control )
             {
-                addGraphics( "Glyphs" );
+                addGraphics( "Streamlines" );
             }
         };
 
@@ -131,16 +128,8 @@ namespace
             Integrator<double, 3>* integrator;
 
             std::string method = options.get< std::string >("Method");
-            if (method.compare("Euler") == 0) {
-                auto euler = Euler<double, 3>(options.get< double >("Stepwidth"));
-                integrator = new Euler<double, 3>(options.get< double >("Stepwidth"));
-            }
-            else if (method.compare("Runge-Kutta") == 0) {
-                auto rungeKutta = RungeKutta<double, 3>();
-                integrator = new RungeKutta<double, 3>();
-            }
-
-            debugLog() << typeid(integrator).name() << std::endl;
+            if (method.compare("Euler") == 0) integrator = new Euler<double, 3>(options.get< double >("Stepwidth"));
+            if (method.compare("Runge-Kutta") == 0) integrator = new RungeKutta<double, 3>(options.get< double >("Stepwidth"));
 
             std::vector<Point3> startPoints;
 

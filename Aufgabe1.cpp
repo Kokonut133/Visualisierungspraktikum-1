@@ -118,13 +118,6 @@ namespace
                 offset++;
             }
 
-//            for (int i = 0; i < points.size(); i++) {
-//                infoLog() << points[i] << std::endl;
-//            }
-//            for (int i = 0; i < indices.size(); i++) {
-//                infoLog() << indices[i] << std::endl;
-//            }
-
             //erstelle Domain aus dem Punktvektor
             std::shared_ptr< const DiscreteDomain< 3 > > mDomain = DomainFactory::makeDomainArbitrary( std::move(points), Precision::UINT64 );
 

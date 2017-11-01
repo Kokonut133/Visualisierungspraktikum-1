@@ -29,7 +29,7 @@ namespace
         {
             VisOutputs( fantom::VisOutputs::Control& control ) : VisAlgorithm::VisOutputs( control )
             {
-                addGraphics( "Glyphs" );
+                addGraphics( "Spheres" );
             }
         };
 
