@@ -31,6 +31,17 @@ namespace
                 add< int >("Number of Houses", "Anzahl der zu zeichnenden Haeuser (mind. 4)", 1);//, &minFour);
                 add< double >("Size", "Groesse eines Hauses", 0.1);
             }
+
+            void optionChanged( const std::string& name )
+            {
+                if( name == "Number of Houses" )
+                {
+                    int value = get< int >( "Number of Houses" );
+                    if (value < 4) {
+                        set< int >("Number of Houses", 4);
+                    }
+                }
+            }
         };
 
         struct DataOutputs : public DataAlgorithm::DataOutputs
@@ -43,10 +54,6 @@ namespace
 
         CreateCityAlgorithm( InitData & data) : DataAlgorithm(data)
         {
-        }
-
-        static int minFour(const int& i) {
-            return std::max(i, 1);
         }
 
         void execute( const Algorithm::Options& options, const volatile bool& /* abortFlag */ ) override

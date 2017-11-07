@@ -45,7 +45,7 @@ namespace
 
         void execute( const Algorithm::Options& options, const volatile bool& /* abortFlag */ ) override
         {
-            mGlyphs = getGraphics("Glyphs").makePrimitive();
+            mGlyphs = getGraphics("Spheres").makePrimitive();
             std::shared_ptr< const TensorFieldDiscrete < Scalar > > field = options.get< TensorFieldDiscrete < Scalar > >("Field");
 
             if (!field) {

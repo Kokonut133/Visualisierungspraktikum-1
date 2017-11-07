@@ -91,6 +91,7 @@ namespace
                 add< TensorFieldContinuous< 3, Vector3 > >("Field", "Feld mit Input" ); ///home/visprak11/fantom/TestData/streamTest2.vtk
                 add< InputChoices >("Method", "Integrationsverfahren", std::vector<std::string>({"Euler", "Runge-Kutta"}), "Euler");
                 add< double >("Stepwidth", "Schrittweite fuer das Euler-Verfahren", 1.0); //TODO disable for Runge-Kutta
+                add< Color >("Color", "Farbe der Stromlinien", Color(0.75, 0.75, 0.0));
 
                 addSeparator();
                 add< double >("Startline_start_x", "2D-Linie Startpunkt x", -1);
@@ -168,7 +169,7 @@ namespace
                 }
                 integrator->reset();
 
-                mGlyphs->add(Primitive::LINES).setVertices(vertices);
+                mGlyphs->add(Primitive::LINES).setColor(options.get< Color >("Color")).setVertices(vertices);
             }
         }
 

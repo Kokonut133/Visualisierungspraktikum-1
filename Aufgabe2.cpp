@@ -50,6 +50,10 @@ namespace
         }
 
         void drawCellByType(unsigned int& index, std::shared_ptr<const Grid<3>>& grid, const Color& color) {
+            if (index > grid->numCells()) {
+                debugLog() << "Invalid index" << std::endl;
+                return;
+            }
             //Alternative über Cell-Visitor
             Cell c = grid->cell(index);
             Cell::Type cellType = c.type();
