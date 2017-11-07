@@ -60,12 +60,12 @@ namespace
                 std::vector<Vector3> vertices;
                 std::vector<std::vector<int>> sides;
                 //speichere Indexe der einzelnen Quadratflächenaußenpunkte
-                sides.push_back(std::vector<int>({7,0,3,4}));
-                sides.push_back(std::vector<int>({3,0,1,2}));
-                sides.push_back(std::vector<int>({4,3,2,5}));
-                sides.push_back(std::vector<int>({5,2,1,6}));
-                sides.push_back(std::vector<int>({6,1,0,7}));
-                sides.push_back(std::vector<int>({7,4,5,6}));
+                sides.push_back(std::vector<int>({4,3,0,7}));
+                sides.push_back(std::vector<int>({2,1,0,3}));
+                sides.push_back(std::vector<int>({5,2,3,4}));
+                sides.push_back(std::vector<int>({6,1,2,5}));
+                sides.push_back(std::vector<int>({7,0,1,6}));
+                sides.push_back(std::vector<int>({6,5,4,7}));
 
                 //Eckpunkte raussuchen und als Quadratpunkte fürs zeichnen speichern
                 for (unsigned int i = 0; i < sides.size(); i++) {
@@ -119,7 +119,7 @@ namespace
 
         void execute( const Algorithm::Options& options, const volatile bool& /* abortFlag */ ) override
         {
-            mGlyphs = getGraphics("Glyphs").makePrimitive();
+            mGlyphs = getGraphics("City").makePrimitive();
 
             std::shared_ptr< const Grid < 3 > > grid = options.get< Grid < 3 > >("Grid");
             if (!grid) {

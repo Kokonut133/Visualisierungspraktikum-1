@@ -65,16 +65,16 @@ namespace
             for (int i = 0; i != numberHouses; i++) {
                 double leftCorner = 2 * distance * offset;
                 //Grundfläche
-                points.push_back(Point3({leftCorner, 0, 0}));
-                points.push_back(Point3({distance + leftCorner, 0, 0}));
-                points.push_back(Point3({distance + leftCorner, 0, distance}));
                 points.push_back(Point3({leftCorner, 0, distance}));
+                points.push_back(Point3({distance + leftCorner, 0, distance}));
+                points.push_back(Point3({distance + leftCorner, 0, 0}));
+                points.push_back(Point3({leftCorner, 0, 0}));
 
                 //Obere Fläche
-                points.push_back(Point3({leftCorner, distance, distance}));
-                points.push_back(Point3({distance + leftCorner, distance, distance}));
-                points.push_back(Point3({distance + leftCorner, distance, 0}));
                 points.push_back(Point3({leftCorner, distance, 0}));
+                points.push_back(Point3({distance + leftCorner, distance, 0}));
+                points.push_back(Point3({distance + leftCorner, distance, distance}));
+                points.push_back(Point3({leftCorner, distance, distance}));
 
                 //Punktindizes
                 for (int i = 0; i < pointsInHexa; i++) {
@@ -89,10 +89,10 @@ namespace
             for (int i = 0; i != numberHouses; i++) {
                 double positionInHexa = offset * pointsInHexa;
                 //andere Reihenfolge, da obere Fläche anders nummeriert -> Ausrichtung gleich
-                indices.push_back(7 + positionInHexa);
-                indices.push_back(6 + positionInHexa);
-                indices.push_back(5 + positionInHexa);
                 indices.push_back(4 + positionInHexa);
+                indices.push_back(5 + positionInHexa);
+                indices.push_back(6 + positionInHexa);
+                indices.push_back(7 + positionInHexa);
 
                 //Spitze
                 points.push_back(Point3({0.5 * distance + 2 * distance * offset, 2 * distance, 0.5 * distance}));
