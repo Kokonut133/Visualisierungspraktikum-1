@@ -73,6 +73,12 @@ namespace
         }
     };
 
+    /**
+     * @brief The VisStreamLinesAlgorithm class
+     *
+     * Zeichnet Stromlinien in einem Vektorfeld. Startpunkte können gleichverteilt auf einer Gerade oder Fläche bestimmt werden.
+     * Die Berechnung der Stromlinien erfolg wahlweise über das explizite Euler- oder das Runge-Kutta-Verfahren vierter Ordnung.
+     */
     class VisStreamLinesAlgorithm : public VisAlgorithm
     {
         std::unique_ptr< Primitive > mGlyphs;
@@ -120,7 +126,7 @@ namespace
 
         void execute( const Algorithm::Options& options, const volatile bool& /* abortFlag */ ) override
         {
-            mGlyphs = getGraphics("Glyphs").makePrimitive();
+            mGlyphs = getGraphics("Streamlines").makePrimitive();
             auto field = options.get< TensorFieldContinuous< 3, Vector3 > >("Field");
 
             if (!field) return;

@@ -7,6 +7,12 @@ using namespace fantom;
 
 namespace
 {
+/**
+     * @brief The VisCityAlgorithm class
+     *
+     * Zeichnet ein Gitter. Der Algorithmus unterstützt die in Aufgabe 1 genutzten Zelltypen HEXAHEDRON, PYRAMID und QUAD.
+     * Über die Optionen kann eine einzelne Zelle anhand ihres Index gezeichnet werden, ansonsten wird das gesamte Grid visualisiert.
+     */
     class VisCityAlgorithm : public VisAlgorithm
     {
         std::unique_ptr< Primitive > mGlyphs;
@@ -53,6 +59,7 @@ namespace
             case Cell::Type::HEXAHEDRON: {
                 std::vector<Vector3> vertices;
                 std::vector<std::vector<int>> sides;
+                //speichere Indexe der einzelnen Quadratflächenaußenpunkte
                 sides.push_back(std::vector<int>({7,0,3,4}));
                 sides.push_back(std::vector<int>({3,0,1,2}));
                 sides.push_back(std::vector<int>({4,3,2,5}));
@@ -60,6 +67,7 @@ namespace
                 sides.push_back(std::vector<int>({6,1,0,7}));
                 sides.push_back(std::vector<int>({7,4,5,6}));
 
+                //Eckpunkte raussuchen und als Quadratpunkte fürs zeichnen speichern
                 for (unsigned int i = 0; i < sides.size(); i++) {
                     for (unsigned int j = 0; j < sides[i].size(); j++) {
                         vertices.push_back(points[c.index(sides[i][j])]);
@@ -125,7 +133,7 @@ namespace
                 auto cellNumber = options.get< unsigned int >("Number of cell");
                 drawCellByType(cellNumber, grid, color);
             }
-            else {
+            else { //alle Zellen zeichnen
                 for (unsigned int i = 0; i < grid->numCells(); i++) {
                     drawCellByType(i, grid, color);
                 }

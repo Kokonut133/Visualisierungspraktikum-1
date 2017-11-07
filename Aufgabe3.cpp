@@ -7,6 +7,12 @@ using namespace fantom;
 
 namespace
 {
+/**
+     * @brief The VisThresholdAlgorithm class
+     *
+     * Zeichnet alle Punkte in einem Skalarfeld, deren Wert über einem wählbaren Grenzwert liegt.
+     * Der Radius der Kugeln kann frei bestimmt werden, außerdem lassen sich die Kugeln anhand ihres Größenverhältnisses zum Grenzwert skalieren
+     */
     class VisThresholdAlgorithm : public VisAlgorithm
     {
         std::unique_ptr< Primitive > mGlyphs;
@@ -59,7 +65,7 @@ namespace
                 auto value = evaluator->value(i);
                 if (value[0] >= threshold) {
                     double diameter = value[0] / threshold;
-                    if (valuesToDraw.find(diameter) == valuesToDraw.end()) {
+                    if (valuesToDraw.find(diameter) == valuesToDraw.end()) { //erstelle Liste für einen bestimmten Durchmesser, falls nötig
                         valuesToDraw.insert({diameter, std::vector<Point3>()});
                     }
                     valuesToDraw[diameter].push_back(points[i]);
