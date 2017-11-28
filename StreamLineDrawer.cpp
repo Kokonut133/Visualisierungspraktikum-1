@@ -12,15 +12,18 @@ namespace
     public:
         virtual ~Integrator() {}
         virtual Point2 nextStep(Point2 xn, TensorFieldContinuous<2, Point2>::Evaluator& evaluator) = 0;
-        void reset() {setHasNext(true);}
-        bool hasNext() {return dhn;}
+        void reset() {setHasNext(true); numSteps = 0;}
+        bool hasNext() {return dhn && this->numSteps < this->maxSteps;}
     protected:
-        Integrator(double stepWidth) {
+        Integrator(double stepWidth, int maxSteps) {
             this->stepWidth = stepWidth;
+            this->maxSteps = maxSteps;
             this->reset();
         }
         void setHasNext(bool b) {dhn = b;}
         double stepWidth;
+        double numSteps = 0;
+        double maxSteps = 0;
     private:
         bool dhn;
     };
@@ -28,10 +31,11 @@ namespace
     class Euler : public Integrator
     {
     public:
-        Euler(double initialStepWidth) : Integrator(initialStepWidth) {}
+        Euler(double initialStepWidth, int maxSteps) : Integrator(initialStepWidth, maxSteps) {}
         ~Euler() {}
 
         Point2 nextStep(Point2 startPoint, TensorFieldContinuous<2, Point2>::Evaluator& evaluator) override {
+            this->numSteps++;
             if (evaluator.reset(startPoint)) {
                 auto changeRate = evaluator.value(); //Wert an der Stelle xn
                 auto nextPoint = startPoint + this->stepWidth * changeRate; //Addition und Multiplikation auf Tensoren ist definiert
@@ -45,10 +49,11 @@ namespace
 
     class RungeKutta : public Integrator {
     public:
-        RungeKutta(double initialStepWidth): Integrator(initialStepWidth) {}
+        RungeKutta(double initialStepWidth, int maxSteps): Integrator(initialStepWidth, maxSteps) {}
         ~RungeKutta() {}
 
         Point2 nextStep(Point2 startPoint, TensorFieldContinuous<2, Point2>::Evaluator& evaluator) override {
+            this->numSteps++;
             Point2 q1 = getTensor(startPoint, evaluator);
             Point2 q2 = getTensor(startPoint + this->stepWidth * 0.5 * q1, evaluator);
             Point2 q3 = getTensor(startPoint + this->stepWidth * 0.5 * q2, evaluator);
@@ -88,6 +93,7 @@ namespace
                 add< TensorFieldContinuous<2, Vector2>>("Field", "Feld mit Input" ); ///home/visprak11/fantom/TestData/streamTest2.vtk
                 add< InputChoices >("Method", "Integrationsverfahren", std::vector<std::string>({"Euler", "Runge-Kutta"}), "Euler");
                 add< double >("Stepwidth", "Schrittweite fuer das Euler-Verfahren", 1.0); //TODO disable for Runge-Kutta
+                add < int >("Number of Steps", "Maximale Anzahl an Integrationsschritten", 100);
                 add< Color >("Color", "Farbe der Stromlinien", Color(0.75, 0.75, 0.0));
                 add< DefaultValueArray<Point3> >("Seedpoints", "Saatpunkte");
             }
@@ -124,8 +130,8 @@ namespace
 
             Integrator* integrator;
             std::string method = options.get< std::string >("Method");
-            if (method.compare("Euler") == 0) integrator = new Euler(options.get< double >("Stepwidth"));
-            if (method.compare("Runge-Kutta") == 0) integrator = new RungeKutta(options.get< double >("Stepwidth"));
+            if (method.compare("Euler") == 0) integrator = new Euler(options.get< double >("Stepwidth"), options.get<int>("Number of Steps"));
+            if (method.compare("Runge-Kutta") == 0) integrator = new RungeKutta(options.get< double >("Stepwidth"), options.get<int>("Number of Steps"));
 
             mGlyphs->add(Primitive::POINTS).setColor(Color(1, 0, 0)).setPointSize(4).setVertices(startPoints);
 

@@ -18,22 +18,22 @@ namespace
         {
             Options( Control& control ) : DataAlgorithm::Options( control )
             {
-                add< double >("Startline_start_x", "2D-Linie Startpunkt x", -1);
-                add< double >("Startline_start_y", "2D-Linie Startpunkt y", 1);
-                add< double >("Startline_start_z", "2D-Linie Startpunkt z", 6);
+                add< double >("Startline_start_x", "2D-Linie Startpunkt x", 0);
+                add< double >("Startline_start_y", "2D-Linie Startpunkt y", -3);
+                add< double >("Startline_start_z", "2D-Linie Startpunkt z", 0);
 
                 addSeparator();
-                add< double >("Startline_end_x", "2D-Linie Endpunkt x", -1);
-                add< double >("Startline_end_y", "2D-Linie Endpunkt y", 1);
+                add< double >("Startline_end_x", "2D-Linie Endpunkt x", 0);
+                add< double >("Startline_end_y", "2D-Linie Endpunkt y", 3);
                 add< double >("Startline_end_z", "2D-Linie Endpunkt z", 0);
 
                 addSeparator();
-                add< double >("Startline_3D_x", "3D-Linie Startpunkt x", -5);
-                add< double >("Startline_3D_y", "3D-Linie Startpunkt y", 5);
-                add< double >("Startline_3D_z", "3D-Linie Startpunkt z", 6);
+                add< double >("Startline_3D_x", "3D-Linie Startpunkt x", 6);
+                add< double >("Startline_3D_y", "3D-Linie Startpunkt y", -3);
+                add< double >("Startline_3D_z", "3D-Linie Startpunkt z", 0);
 
                 addSeparator();
-                add< int >("Number", "Anzahl an Punkten auf den Startlinien", 10);
+                add< int >("Number", "Anzahl an Punkten auf den Startlinien", 5);
             }
         };
 
