@@ -2,6 +2,7 @@
 #include <fantom/register.hpp>
 #include <fantom/fields.hpp>
 #include <fantom/graphics.hpp>
+#include "Util.h"
 
 using namespace fantom;
 

@@ -1,7 +1,7 @@
 #include <fantom/algorithm.hpp>
 #include <fantom/register.hpp>
 #include <fantom/fields.hpp>
-#include <fantom/graphics.hpp>
+#include "Util.h"
 
 using namespace fantom;
 
@@ -12,36 +12,34 @@ namespace
      *
      * Findet Zellen, die kritische Punkte beinhalten und markiert sie
      */
-    class CriticalPointsAlgorithm : public VisAlgorithm
+    class CriticalPointsAlgorithm : public DataAlgorithm
     {
-        std::unique_ptr< Primitive > mGlyphs;
-        std::vector<Point2> criticalPoints;
+        std::vector<std::pair<Point2, CriticalPointType>> criticalPoints;
 
     public:
-        struct Options : public VisAlgorithm::Options
+        struct Options : public DataAlgorithm::Options
         {
-            Options( Control& control ) : VisAlgorithm::Options( control )
+            Options( Control& control ) : DataAlgorithm::Options( control )
             {
                 add<TensorFieldContinuous<2, Vector2>>("Field", "Feld mit Input" );
                 add< Color >("Color", "Zeichenfarbe", Color(0.75, 0.75, 0.0));
             }
         };
 
-        struct VisOutputs : public VisAlgorithm::VisOutputs
+        struct DataOutputs : public DataAlgorithm::DataOutputs
         {
-            VisOutputs( fantom::VisOutputs::Control& control ) : VisAlgorithm::VisOutputs( control )
+            DataOutputs( DataOutputs::Control& control ) : DataAlgorithm::DataOutputs( control )
             {
-                addGraphics( "Cells" );
+                add< DefaultValueArray<std::pair<Point2, CriticalPointType>>>( "Critical Points" );
             }
         };
 
-        CriticalPointsAlgorithm( InitData & data) : VisAlgorithm( data )
+        CriticalPointsAlgorithm( InitData & data) : DataAlgorithm( data )
         {
         }
 
         void execute( const Algorithm::Options& options, const volatile bool& /* abortFlag */ ) override
         {
-            mGlyphs = getGraphics("Cells").makePrimitive();
             std::shared_ptr<const TensorFieldContinuous<2, Vector2>> field = options.get<TensorFieldContinuous<2, Vector2>>("Field");
             if (!field) return;
 
@@ -51,17 +49,16 @@ namespace
             const ValueArray<Point2>& gridPoints = grid->points();
             auto evaluator = field->makeEvaluator();
 
-            std::vector<Point3> vertices;
             for (size_t i = 0; i < grid->numCells(); i++) {
                 auto cell = grid->cell(i);
                 if (containsCriticalPoint(cell, gridPoints, *evaluator)) {
-                    vertices.push_back(to3D(gridPoints[cell.index(0)]));
-                    vertices.push_back(to3D(gridPoints[cell.index(1)]));
-                    vertices.push_back(to3D(gridPoints[cell.index(2)]));
-                    vertices.push_back(to3D(gridPoints[cell.index(3)]));
+                    //log
                 }
-            }            
-            mGlyphs->add(Primitive::QUADS).setColor(options.get< Color >("Color")).setVertices(vertices);
+            }
+
+            DefaultValueArray<std::pair<Point2, CriticalPointType>> valueArray(criticalPoints, Precision::UINT64);
+            auto result = std::make_shared<DefaultValueArray<std::pair<Point2, CriticalPointType>>>(valueArray);
+            setResult("Critical Points", result);
         }
 
         bool containsCriticalPoint(Cell cell, const ValueArray<Point2>& points, TensorFieldContinuous<2, Vector2>::Evaluator& evaluator) {
@@ -76,23 +73,27 @@ namespace
 
             //quellen
             if (v0[0] < 0 && v0[1] > 0 && v1[0] < 0 && v1[1] < 0 && v2[0] > 0 && v2[1] < 0 && v3[0] > 0 && v3[1] > 0) {
-                criticalPoints.push_back(getCenterPoint(cell, points));
+                auto point = std::make_pair(getCenterPoint(cell, points), CriticalPointType::SOURCE);
+                criticalPoints.push_back(point);
                 return true;
             }
 
             //senken
             if (v0[0] > 0 && v0[1] < 0 && v1[0] > 0 && v1[1] > 0 && v2[0] < 0 && v2[1] > 0 && v3[0] < 0 && v3[1] < 0) {
-                criticalPoints.push_back(getCenterPoint(cell, points));
+                auto point = std::make_pair(getCenterPoint(cell, points), CriticalPointType::SINK);
+                criticalPoints.push_back(point);
                 return true;
             }
 
             //sattel
             if (v0[0] > 0 && v0[1] < 0 && v1[0] < 0 && v1[1] < 0 && v2[0] < 0 && v2[1] > 0 && v3[0] > 0 && v3[1] > 0) {
-                criticalPoints.push_back(getCenterPoint(cell, points));
+                auto point = std::make_pair(getCenterPoint(cell, points), CriticalPointType::SADDLE);
+                criticalPoints.push_back(point);
                 return true;
             }
             if (v0[0] < 0 && v0[1] > 0 && v1[0] > 0 && v1[1] > 0 && v2[0] > 0 && v2[1] < 0 && v3[0] < 0 && v3[1] < 0) {
-                criticalPoints.push_back(getCenterPoint(cell, points));
+                auto point = std::make_pair(getCenterPoint(cell, points), CriticalPointType::SADDLE);
+                criticalPoints.push_back(point);
                 return true;
             }
 
@@ -104,10 +105,6 @@ namespace
             auto p2 = points[cell.index(2)];
             Point2 middle((p0[0] + p2[0])/2, (p0[1] + p2[1])/2);
             return middle;
-        }
-
-        Point3 to3D(Point2 p) {
-            return Point3(p[0], p[1], 0);
         }
 
     };
