@@ -15,6 +15,7 @@ namespace
     class CriticalPointsAlgorithm : public VisAlgorithm
     {
         std::unique_ptr< Primitive > mGlyphs;
+        std::vector<Point2> criticalPoints;
 
     public:
         struct Options : public VisAlgorithm::Options
@@ -48,22 +49,61 @@ namespace
             if (!grid) return;
 
             const ValueArray<Point2>& gridPoints = grid->points();
+            auto evaluator = field->makeEvaluator();
 
             std::vector<Point3> vertices;
             for (size_t i = 0; i < grid->numCells(); i++) {
                 auto cell = grid->cell(i);
-                if (containsCriticalPoint(cell)) {
+                if (containsCriticalPoint(cell, gridPoints, *evaluator)) {
                     vertices.push_back(to3D(gridPoints[cell.index(0)]));
                     vertices.push_back(to3D(gridPoints[cell.index(1)]));
                     vertices.push_back(to3D(gridPoints[cell.index(2)]));
                     vertices.push_back(to3D(gridPoints[cell.index(3)]));
                 }
-            }
+            }            
             mGlyphs->add(Primitive::QUADS).setColor(options.get< Color >("Color")).setVertices(vertices);
         }
 
-        bool containsCriticalPoint(Cell cell) {
-            return true;
+        bool containsCriticalPoint(Cell cell, const ValueArray<Point2>& points, TensorFieldContinuous<2, Vector2>::Evaluator& evaluator) {
+            evaluator.reset(points[cell.index(0)]);
+            Vector2 v0 = evaluator.value();
+            evaluator.reset(points[cell.index(1)]);
+            Vector2 v1 = evaluator.value();
+            evaluator.reset(points[cell.index(2)]);
+            Vector2 v2 = evaluator.value();
+            evaluator.reset(points[cell.index(3)]);
+            Vector2 v3 = evaluator.value();
+
+            //quellen
+            if (v0[0] < 0 && v0[1] > 0 && v1[0] < 0 && v1[1] < 0 && v2[0] > 0 && v2[1] < 0 && v3[0] > 0 && v3[1] > 0) {
+                criticalPoints.push_back(getCenterPoint(cell, points));
+                return true;
+            }
+
+            //senken
+            if (v0[0] > 0 && v0[1] < 0 && v1[0] > 0 && v1[1] > 0 && v2[0] < 0 && v2[1] > 0 && v3[0] < 0 && v3[1] < 0) {
+                criticalPoints.push_back(getCenterPoint(cell, points));
+                return true;
+            }
+
+            //sattel
+            if (v0[0] > 0 && v0[1] < 0 && v1[0] < 0 && v1[1] < 0 && v2[0] < 0 && v2[1] > 0 && v3[0] > 0 && v3[1] > 0) {
+                criticalPoints.push_back(getCenterPoint(cell, points));
+                return true;
+            }
+            if (v0[0] < 0 && v0[1] > 0 && v1[0] > 0 && v1[1] > 0 && v2[0] > 0 && v2[1] < 0 && v3[0] < 0 && v3[1] < 0) {
+                criticalPoints.push_back(getCenterPoint(cell, points));
+                return true;
+            }
+
+            return false;
+        }
+
+        Point2 getCenterPoint(Cell cell, const ValueArray<Point2>& points) {
+            auto p0 = points[cell.index(0)];
+            auto p2 = points[cell.index(2)];
+            Point2 middle((p0[0] + p2[0])/2, (p0[1] + p2[1])/2);
+            return middle;
         }
 
         Point3 to3D(Point2 p) {
